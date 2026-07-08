@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ka Radar Positions</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+
+  :root {
+    --ink: #ffffff;
+    --panel: #cccccc;
+    --panel-2: #ffffff;
+    --line: #9a9a9a;
+    --text: #1a1a1a;
+    --muted: #4d4d4d;
+    --amber: #e90802;
+    --green: #1a7f37;
+    --danger: #a11212;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--ink);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+
+  .wrap { max-width: 640px; margin: 0 auto; padding: 28px 20px 60px; }
+
+  header { display: flex; align-items: baseline; gap: 12px; border-bottom: 1px solid var(--line); padding-bottom: 14px; margin-bottom: 22px; flex-wrap: wrap; }
+  header h1 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 600; font-size: 28px; letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+  header .status { margin-left: auto; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--muted); }
+  header .status .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--muted); margin-right: 6px; vertical-align: middle; }
+  header .status .dot.ok { background: var(--green); }
+  header .status .dot.warn { background: var(--amber); }
+  header .status .dot.err { background: var(--danger); }
+
+  .banner {
+    background: rgba(229, 100, 90, 0.12); border: 1px solid var(--danger);
+    border-radius: 8px; padding: 12px 14px; margin-bottom: 18px;
+    font-size: 13px; display: none;
+  }
+  .banner code { font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
+
+  .radar-card {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    padding: 20px; margin-bottom: 16px;
+  }
+  .radar-card .head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; }
+  .radar-card h2 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 600; font-size: 26px; letter-spacing: 0.06em;
+    color: var(--amber);
+  }
+  .radar-card .last { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); }
+
+  label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  input[type="text"], input[type="password"] {
+    width: 100%; background: var(--panel-2); border: 1px solid var(--line);
+    border-radius: 6px; color: var(--text); padding: 12px 12px;
+    font-family: 'IBM Plex Mono', monospace; font-size: 16px;
+  }
+  input::placeholder { color: #999999; }
+  input:focus, button:focus-visible, summary:focus-visible { outline: 2px solid var(--amber); outline-offset: 1px; }
+  input.bad { border-color: var(--danger); }
+
+  .field { margin-bottom: 4px; }
+  .parsed { font-family: 'IBM Plex Mono', monospace; font-size: 12px; margin-top: 5px; min-height: 18px; }
+  .parsed.ok { color: var(--green); }
+  .parsed.err { color: var(--danger); }
+  .parsed.empty { color: var(--muted); }
+
+  .token-row {
+    background: var(--panel); border: 1px solid var(--amber); border-radius: 10px;
+    padding: 16px 20px; margin: 16px 0; display: none;
+  }
+  .token-row .hint { margin-top: 6px; }
+
+  .publish-row { margin: 22px 0 8px; }
+  button.publish {
+    width: 100%; background: var(--amber); color: #ffffff; border: none; border-radius: 8px;
+    padding: 15px; font-family: 'IBM Plex Sans', sans-serif; font-weight: 600;
+    font-size: 16px; cursor: pointer;
+  }
+  button.publish:hover { filter: brightness(1.08); }
+  button.publish:disabled { opacity: 0.5; cursor: default; }
+
+  .msg { font-family: 'IBM Plex Mono', monospace; font-size: 13px; margin-top: 10px; min-height: 20px; text-align: center; }
+  .msg.ok { color: var(--green); }
+  .msg.err { color: var(--danger); }
+  .msg.plain { color: var(--muted); }
+
+  footer { margin-top: 26px; border-top: 1px solid var(--line); padding-top: 14px; }
+  .url-box { display: flex; gap: 8px; align-items: center; margin-top: 4px; }
+  .url-box input { flex: 1; font-size: 12px; padding: 8px 10px; }
+  .hint { font-size: 12px; color: var(--muted); margin-top: 8px; }
+
+  button.small {
+    background: transparent; color: var(--text); border: 1px solid var(--line);
+    border-radius: 5px; padding: 6px 12px; font-size: 12px; font-weight: 500;
+    font-family: 'IBM Plex Sans', sans-serif; cursor: pointer; white-space: nowrap;
+  }
+  button.small:hover { border-color: var(--muted); }
+
+  details { margin-top: 14px; }
+  details summary { cursor: pointer; font-size: 12px; color: var(--muted); }
+  details .inner { padding-top: 10px; }
+  pre {
+    background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px;
+    padding: 12px; font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+    line-height: 1.5; overflow: auto; max-height: 300px; white-space: pre; margin-top: 8px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Ka Radar Positions</h1>
+    <span class="status"><span class="dot" id="status-dot"></span><span id="status-text">loading…</span></span>
+  </header>
+
+  <div class="banner" id="config-banner">
+    This page isn't configured yet. Open <code>index.html</code> in the repo, find the
+    <code>CONFIG</code> block at the top of the script, and set <code>owner</code> to the
+    GitHub username that owns this repo.
+  </div>
+
+  <div class="radar-card">
+    <div class="head">
+      <h2>KA1</h2>
+      <span class="last" id="ka1-last"></span>
+    </div>
+    <div class="field">
+      <label for="ka1-coords">Lat, Lon — leave blank if not deployed</label>
+      <input type="text" id="ka1-coords" placeholder="33.5646, -101.8552" autocomplete="off">
+      <div class="parsed" id="ka1-parsed"></div>
+    </div>
+  </div>
+
+  <div class="radar-card">
+    <div class="head">
+      <h2>KA2</h2>
+      <span class="last" id="ka2-last"></span>
+    </div>
+    <div class="field">
+      <label for="ka2-coords">Lat, Lon — leave blank if not deployed</label>
+      <input type="text" id="ka2-coords" placeholder="33.5646, -101.8552" autocomplete="off">
+      <div class="parsed" id="ka2-parsed"></div>
+    </div>
+  </div>
+
+  <div class="token-row" id="token-row">
+    <label for="gh-token">First publish from this browser — paste the team access token (saved here after this, ask Natalie for it)</label>
+    <input type="password" id="gh-token" placeholder="github_pat_...">
+    <div class="hint">The token never leaves this browser except to talk to GitHub.</div>
+  </div>
+
+  <div class="publish-row">
+    <button class="publish" id="btn-publish">Publish to GR</button>
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <footer>
+    <label>Placefile URL for GR2Analyst — add once in Placefile Manager on each machine</label>
+    <div class="url-box">
+      <input type="text" id="gr-url" readonly aria-label="Placefile URL for GR2Analyst">
+      <button class="small" id="btn-copy-url">Copy</button>
+    </div>
+    <details>
+      <summary>Placefile preview / manual fallback</summary>
+      <div class="inner">
+        <pre id="preview"></pre>
+        <div class="url-box">
+          <button class="small" id="btn-copy-pf">Copy placefile text</button>
+          <button class="small" id="btn-download">Download radars.txt</button>
+        </div>
+        <div class="hint">If GitHub is unreachable, put this file somewhere GR can read it and reload it there.</div>
+      </div>
+    </details>
+  </footer>
+</div>
+
+<script>
+(function () {
+
+  // ============================================================
+  //  CONFIG — edit these two lines once, when you upload this
+  //  file to your repo. Nothing else in the file needs changing.
+  // ============================================================
+  const CONFIG = {
+    owner:   "YOUR-GITHUB-USERNAME",   // <-- your GitHub username
+    repo:    "radar-placefile",        // <-- this repo's name
+    branch:  "main",
+    ringKm:  15,   // range ring radius drawn around each radar (0 = none)
+    refresh: 5     // how often GR re-polls the placefile, minutes
+  };
+  // ============================================================
+
+  const TOKEN_KEY = 'ka-radar-token';
+  const PLACEFILE_PATH = 'radars.txt';
+  const STATE_PATH = 'radars.json';
+  const RADARS = ['ka1', 'ka2'];
+
+  const $ = id => document.getElementById(id);
+  const configured = CONFIG.owner && CONFIG.owner !== 'YOUR-GITHUB-USERNAME';
+
+  // ---------- token persistence (per-browser) ----------
+  function getToken() {
+    let t = $('gh-token').value.trim();
+    if (t) return t;
+    try { t = localStorage.getItem(TOKEN_KEY) || ''; } catch (e) {}
+    return t;
+  }
+  function saveToken(t) {
+    try { localStorage.setItem(TOKEN_KEY, t); } catch (e) {}
+    try { if (window.storage) window.storage.set(TOKEN_KEY, t); } catch (e) {}
+  }
+  function clearToken() {
+    try { localStorage.removeItem(TOKEN_KEY); } catch (e) {}
+    try { if (window.storage) window.storage.delete(TOKEN_KEY); } catch (e) {}
+  }
+  async function loadStoredTokenFallback() {
+    // for environments without localStorage (e.g. claude.ai preview)
+    try {
+      if (!localStorage.getItem(TOKEN_KEY) && window.storage) {
+        const r = await window.storage.get(TOKEN_KEY);
+        if (r && r.value) saveToken(r.value);
+      }
+    } catch (e) {}
+  }
+
+  function rawUrl() {
+    return 'https://raw.githubusercontent.com/' + CONFIG.owner + '/' + CONFIG.repo + '/' + CONFIG.branch + '/' + PLACEFILE_PATH;
+  }
+
+  function setStatus(text, cls) {
+    $('status-text').textContent = text;
+    $('status-dot').className = 'dot' + (cls ? ' ' + cls : '');
+  }
+  function setMsg(text, cls) {
+    const m = $('msg');
+    m.textContent = text;
+    m.className = 'msg' + (cls ? ' ' + cls : '');
+  }
+
+  // ---------- coordinate parsing ----------
+  function parseCoords(str) {
+    if (!str || !str.trim()) return { empty: true };
+    let cleaned = str.trim().replace(/[()]/g, '');
+    cleaned = cleaned.replace(/([0-9.]+)\s*°?\s*([NSEW])/gi, (m, num, dir) => {
+      const v = parseFloat(num);
+      return (dir.toUpperCase() === 'S' || dir.toUpperCase() === 'W') ? String(-v) : String(v);
+    });
+    const parts = cleaned.split(/[,\s]+/).filter(Boolean).map(Number);
+    if (parts.length < 2 || parts.some(isNaN)) return { error: true };
+    const [lat, lon] = parts;
+    if (Math.abs(lat) > 90 || Math.abs(lon) > 180) return { error: true };
+    return { lat, lon };
+  }
+
+  function showParsed(id) {
+    const input = $(id + '-coords');
+    const out = $(id + '-parsed');
+    const p = parseCoords(input.value);
+    input.classList.remove('bad');
+    if (p.empty) { out.textContent = 'not deployed — will be left off the placefile'; out.className = 'parsed empty'; return p; }
+    if (p.error) { out.textContent = 'can\u2019t read that — use decimal degrees like 33.5646, -101.8552'; out.className = 'parsed err'; input.classList.add('bad'); return p; }
+    out.textContent = '\u2713 ' + p.lat.toFixed(5) + ', ' + p.lon.toFixed(5);
+    out.className = 'parsed ok';
+    return p;
+  }
+
+  // ---------- placefile ----------
+  function circlePoints(lat0, lon0, radiusKm, n = 72) {
+    const pts = [];
+    const latRad = lat0 * Math.PI / 180;
+    for (let i = 0; i <= n; i++) {
+      const t = (i / n) * 2 * Math.PI;
+      pts.push([
+        lat0 + (radiusKm / 111.32) * Math.cos(t),
+        lon0 + (radiusKm / (111.32 * Math.cos(latRad))) * Math.sin(t)
+      ]);
+    }
+    return pts;
+  }
+
+  function buildPlacefile() {
+    const stamp = new Date().toISOString().replace('T', ' ').slice(0, 16) + ' UTC';
+    const L = [];
+    L.push('; Ka radar positions — updated ' + stamp);
+    L.push('Title: Ka-band Radars');
+    L.push('Refresh: ' + Math.max(1, CONFIG.refresh));
+    L.push('Threshold: 999');
+    L.push('Color: 233 8 2');
+    L.push('Font: 1, 12, 1, "Arial"');
+    L.push('');
+
+    RADARS.forEach(id => {
+      const p = parseCoords($(id + '-coords').value);
+      if (p.empty || p.error) return;
+      const name = id.toUpperCase();
+      const lat = p.lat.toFixed(5), lon = p.lon.toFixed(5);
+      L.push('; --- ' + name + ' ---');
+      L.push('Text: ' + lat + ', ' + lon + ', 1, "' + name + '", "' + name + ' — updated ' + stamp + '"');
+      if (CONFIG.ringKm > 0) {
+        L.push('Line: 2, 0, "' + name + ' ' + CONFIG.ringKm + ' km range"');
+        circlePoints(p.lat, p.lon, CONFIG.ringKm).forEach(pt => {
+          L.push('  ' + pt[0].toFixed(5) + ', ' + pt[1].toFixed(5));
+        });
+        L.push('End:');
+      }
+      L.push('');
+    });
+
+    return L.join('\n');
+  }
+
+  function refreshPreview() { $('preview').textContent = buildPlacefile(); }
+
+  // ---------- GitHub API ----------
+  function ghHeaders(token) {
+    const h = { 'Accept': 'application/vnd.github+json' };
+    if (token) h['Authorization'] = 'Bearer ' + token;
+    return h;
+  }
+  function b64encode(str) { return btoa(unescape(encodeURIComponent(str))); }
+  function b64decode(str) { return decodeURIComponent(escape(atob(str.replace(/\n/g, '')))); }
+
+  async function ghGetFile(path, token) {
+    const url = 'https://api.github.com/repos/' + CONFIG.owner + '/' + CONFIG.repo + '/contents/' + path + '?ref=' + encodeURIComponent(CONFIG.branch);
+    const r = await fetch(url, { headers: ghHeaders(token) });
+    if (r.status === 404) return null;
+    if (!r.ok) throw new Error('GitHub read failed (' + r.status + ')');
+    return r.json();
+  }
+
+  async function ghPutFile(path, content, message, token) {
+    const existing = await ghGetFile(path, token);
+    const url = 'https://api.github.com/repos/' + CONFIG.owner + '/' + CONFIG.repo + '/contents/' + path;
+    const body = { message: message, content: b64encode(content), branch: CONFIG.branch };
+    if (existing && existing.sha) body.sha = existing.sha;
+    const r = await fetch(url, {
+      method: 'PUT',
+      headers: Object.assign(ghHeaders(token), { 'Content-Type': 'application/json' }),
+      body: JSON.stringify(body)
+    });
+    if (r.status === 401 || r.status === 403) {
+      clearToken();
+      $('token-row').style.display = 'block';
+      throw new Error('Token was rejected — paste a valid team token and publish again.');
+    }
+    if (!r.ok) {
+      let detail = '';
+      try { detail = (await r.json()).message || ''; } catch (e) {}
+      throw new Error('Publish failed (' + r.status + ') ' + detail);
+    }
+    return r.json();
+  }
+
+  async function loadShared() {
+    if (!configured) {
+      $('config-banner').style.display = 'block';
+      setStatus('not configured', 'err');
+      return;
+    }
+    try {
+      setStatus('loading…');
+      const f = await ghGetFile(STATE_PATH);
+      if (!f) {
+        setStatus('connected — nothing published yet', 'ok');
+        return;
+      }
+      const state = JSON.parse(b64decode(f.content));
+      RADARS.forEach(id => {
+        const r = state[id];
+        if (r && r.coords !== undefined) {
+          $(id + '-coords').value = r.coords;
+          $(id + '-last').textContent = r.updated ? 'last published ' + r.updated : '';
+        }
+        showParsed(id);
+      });
+      setStatus('showing current published positions', 'ok');
+      refreshPreview();
+    } catch (e) {
+      setStatus('couldn\u2019t reach GitHub', 'err');
+      setMsg(e.message, 'err');
+    }
+  }
+
+  async function publish() {
+    if (!configured) {
+      setMsg('Set the owner in the CONFIG block at the top of index.html first.', 'err');
+      return;
+    }
+    for (const id of RADARS) {
+      const p = showParsed(id);
+      if (p.error) {
+        setMsg(id.toUpperCase() + ' coordinates don\u2019t parse — fix or clear the box.', 'err');
+        return;
+      }
+    }
+    const token = getToken();
+    if (!token) {
+      $('token-row').style.display = 'block';
+      $('gh-token').focus();
+      setMsg('Paste the team token above, then hit Publish again.', 'plain');
+      return;
+    }
+    const btn = $('btn-publish');
+    btn.disabled = true;
+    try {
+      setMsg('Publishing…', 'plain');
+      const stamp = new Date().toISOString().replace('T', ' ').slice(0, 16) + ' UTC';
+      const state = { updated: stamp };
+      RADARS.forEach(id => {
+        state[id] = { coords: $(id + '-coords').value.trim(), updated: stamp };
+      });
+      await ghPutFile(PLACEFILE_PATH, buildPlacefile(), 'Update Ka radar positions — ' + stamp, token);
+      await ghPutFile(STATE_PATH, JSON.stringify(state, null, 2), 'Update state — ' + stamp, token);
+      saveToken(token);
+      $('token-row').style.display = 'none';
+      RADARS.forEach(id => { $(id + '-last').textContent = 'last published ' + stamp; });
+      setMsg('\u2713 Published — GR displays update within ~5–10 min.', 'ok');
+      setStatus('showing current published positions', 'ok');
+    } catch (e) {
+      setMsg(e.message, 'err');
+      setStatus('publish error', 'err');
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  // ---------- events ----------
+  RADARS.forEach(id => {
+    $(id + '-coords').addEventListener('input', () => { showParsed(id); refreshPreview(); });
+    $(id + '-coords').addEventListener('keydown', e => { if (e.key === 'Enter') publish(); });
+  });
+
+  $('btn-publish').addEventListener('click', publish);
+
+  async function copyText(text, btn) {
+    try { await navigator.clipboard.writeText(text); }
+    catch (e) {
+      const ta = document.createElement('textarea');
+      ta.value = text; document.body.appendChild(ta);
+      ta.select(); document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+    const old = btn.textContent;
+    btn.textContent = 'Copied \u2713';
+    setTimeout(() => { btn.textContent = old; }, 1200);
+  }
+
+  $('btn-copy-url').addEventListener('click', e => copyText(rawUrl(), e.target));
+  $('btn-copy-pf').addEventListener('click', e => copyText(buildPlacefile(), e.target));
+  $('btn-download').addEventListener('click', () => {
+    const blob = new Blob([buildPlacefile()], { type: 'text/plain' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'radars.txt';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+
+  // ---------- init ----------
+  $('gr-url').value = configured ? rawUrl() : '(configure first)';
+  loadStoredTokenFallback().then(() => {
+    RADARS.forEach(showParsed);
+    refreshPreview();
+    loadShared();
+  });
+})();
+</script>
+</body>
+</html>
