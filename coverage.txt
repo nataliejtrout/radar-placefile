@@ -1,4 +1,4 @@
-; Ka dual-Doppler lobes (30° crossing angle) — updated 2026-07-08 19:47 UTC
+; Ka dual-Doppler lobes (30° crossing angle) — updated 2026-07-08 19:48 UTC
 Title: Ka Dual-Doppler Lobes
 Refresh: 2
 Threshold: 999
