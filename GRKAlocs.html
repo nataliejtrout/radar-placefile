@@ -14,7 +14,7 @@
     --line: #9a9a9a;
     --text: #1a1a1a;
     --muted: #4d4d4d;
-    --amber: #e90802;
+    --accent: #e90802;
     --green: #1a7f37;
     --danger: #a11212;
   }
@@ -41,11 +41,11 @@
   header .status { margin-left: auto; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--muted); }
   header .status .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--muted); margin-right: 6px; vertical-align: middle; }
   header .status .dot.ok { background: var(--green); }
-  header .status .dot.warn { background: var(--amber); }
+  header .status .dot.warn { background: var(--accent); }
   header .status .dot.err { background: var(--danger); }
 
   .banner {
-    background: rgba(229, 100, 90, 0.12); border: 1px solid var(--danger);
+    background: rgba(233, 8, 2, 0.08); border: 1px solid var(--danger);
     border-radius: 8px; padding: 12px 14px; margin-bottom: 18px;
     font-size: 13px; display: none;
   }
@@ -59,7 +59,7 @@
   .radar-card h2 {
     font-family: 'Barlow Condensed', sans-serif;
     font-weight: 600; font-size: 26px; letter-spacing: 0.06em;
-    color: var(--amber);
+    color: var(--accent);
   }
   .radar-card .last { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); }
 
@@ -70,24 +70,30 @@
     font-family: 'IBM Plex Mono', monospace; font-size: 16px;
   }
   input::placeholder { color: #999999; }
-  input:focus, button:focus-visible, summary:focus-visible { outline: 2px solid var(--amber); outline-offset: 1px; }
+  input:focus, button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
   input.bad { border-color: var(--danger); }
 
-  .field { margin-bottom: 4px; }
+  .field-row { display: flex; gap: 12px; }
+  .field-row .coords-field { flex: 1; min-width: 0; }
+  .field-row .range-field { max-width: 130px; }
+
   .parsed { font-family: 'IBM Plex Mono', monospace; font-size: 12px; margin-top: 5px; min-height: 18px; }
   .parsed.ok { color: var(--green); }
   .parsed.err { color: var(--danger); }
   .parsed.empty { color: var(--muted); }
 
+  .overlap-note { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--muted); text-align: center; margin-top: 4px; min-height: 18px; }
+  .overlap-note.ok { color: var(--green); }
+
   .token-row {
-    background: var(--panel); border: 1px solid var(--amber); border-radius: 10px;
+    background: var(--panel); border: 1px solid var(--accent); border-radius: 10px;
     padding: 16px 20px; margin: 16px 0; display: none;
   }
   .token-row .hint { margin-top: 6px; }
 
   .publish-row { margin: 22px 0 8px; }
   button.publish {
-    width: 100%; background: var(--amber); color: #ffffff; border: none; border-radius: 8px;
+    width: 100%; background: var(--accent); color: #ffffff; border: none; border-radius: 8px;
     padding: 15px; font-family: 'IBM Plex Sans', sans-serif; font-weight: 600;
     font-size: 16px; cursor: pointer;
   }
@@ -100,7 +106,7 @@
   .msg.plain { color: var(--muted); }
 
   footer { margin-top: 26px; border-top: 1px solid var(--line); padding-top: 14px; }
-  .url-box { display: flex; gap: 8px; align-items: center; margin-top: 4px; }
+  .url-box { display: flex; gap: 8px; align-items: center; margin-top: 4px; margin-bottom: 12px; }
   .url-box input { flex: 1; font-size: 12px; padding: 8px 10px; }
   .hint { font-size: 12px; color: var(--muted); margin-top: 8px; }
 
@@ -129,7 +135,7 @@
   </header>
 
   <div class="banner" id="config-banner">
-    This page isn't configured yet. Open <code>index.html</code> in the repo, find the
+    This page isn't configured yet. Open <code>GRKAlocs.html</code> in the repo, find the
     <code>CONFIG</code> block at the top of the script, and set <code>owner</code> to the
     GitHub username that owns this repo.
   </div>
@@ -139,11 +145,17 @@
       <h2>KA1</h2>
       <span class="last" id="ka1-last"></span>
     </div>
-    <div class="field">
-      <label for="ka1-coords">Lat, Lon — leave blank if not deployed</label>
-      <input type="text" id="ka1-coords" placeholder="33.5646, -101.8552" autocomplete="off">
-      <div class="parsed" id="ka1-parsed"></div>
+    <div class="field-row">
+      <div class="coords-field">
+        <label for="ka1-coords">Lat, Lon — leave blank if not deployed</label>
+        <input type="text" id="ka1-coords" placeholder="33.5646, -101.8552" autocomplete="off">
+      </div>
+      <div class="range-field">
+        <label for="ka1-range">Range (km)</label>
+        <input type="text" id="ka1-range" placeholder="15" autocomplete="off">
+      </div>
     </div>
+    <div class="parsed" id="ka1-parsed"></div>
   </div>
 
   <div class="radar-card">
@@ -151,12 +163,20 @@
       <h2>KA2</h2>
       <span class="last" id="ka2-last"></span>
     </div>
-    <div class="field">
-      <label for="ka2-coords">Lat, Lon — leave blank if not deployed</label>
-      <input type="text" id="ka2-coords" placeholder="33.5646, -101.8552" autocomplete="off">
-      <div class="parsed" id="ka2-parsed"></div>
+    <div class="field-row">
+      <div class="coords-field">
+        <label for="ka2-coords">Lat, Lon — leave blank if not deployed</label>
+        <input type="text" id="ka2-coords" placeholder="33.5646, -101.8552" autocomplete="off">
+      </div>
+      <div class="range-field">
+        <label for="ka2-range">Range (km)</label>
+        <input type="text" id="ka2-range" placeholder="15" autocomplete="off">
+      </div>
     </div>
+    <div class="parsed" id="ka2-parsed"></div>
   </div>
+
+  <div class="overlap-note" id="overlap-note"></div>
 
   <div class="token-row" id="token-row">
     <label for="gh-token">First publish from this browser — paste the team access token (saved here after this, ask Natalie for it)</label>
@@ -170,20 +190,25 @@
   </div>
 
   <footer>
-    <label>Placefile URL for GR2Analyst — add once in Placefile Manager on each machine</label>
+    <label>Radar positions placefile — always-on labels (add once in GR Placefile Manager)</label>
     <div class="url-box">
-      <input type="text" id="gr-url" readonly aria-label="Placefile URL for GR2Analyst">
+      <input type="text" id="gr-url" readonly aria-label="Positions placefile URL for GR2Analyst">
       <button class="small" id="btn-copy-url">Copy</button>
+    </div>
+    <label>Coverage placefile — range circles + overlap, toggle on/off in GR (add once, same way)</label>
+    <div class="url-box">
+      <input type="text" id="gr-url-cov" readonly aria-label="Coverage placefile URL for GR2Analyst">
+      <button class="small" id="btn-copy-url-cov">Copy</button>
     </div>
     <details>
       <summary>Placefile preview / manual fallback</summary>
       <div class="inner">
         <pre id="preview"></pre>
         <div class="url-box">
-          <button class="small" id="btn-copy-pf">Copy placefile text</button>
           <button class="small" id="btn-download">Download radars.txt</button>
+          <button class="small" id="btn-download-cov">Download coverage.txt</button>
         </div>
-        <div class="hint">If GitHub is unreachable, put this file somewhere GR can read it and reload it there.</div>
+        <div class="hint">If GitHub is unreachable, put these files somewhere GR can read them and reload there.</div>
       </div>
     </details>
   </footer>
@@ -197,18 +222,19 @@
   //  file to your repo. Nothing else in the file needs changing.
   // ============================================================
   const CONFIG = {
-    owner:   "nataliejtrout",   // <-- your GitHub username
+    owner:   "YOUR-GITHUB-USERNAME",   // <-- your GitHub username
     repo:    "radar-placefile",        // <-- this repo's name
     branch:  "main",
-    ringKm:  15,   // range ring radius drawn around each radar (0 = none)
-    refresh: 5     // how often GR re-polls the placefile, minutes
+    refresh: 5     // how often GR re-polls the placefiles, minutes
   };
   // ============================================================
 
   const TOKEN_KEY = 'ka-radar-token';
   const PLACEFILE_PATH = 'radars.txt';
+  const COVERAGE_PATH = 'coverage.txt';
   const STATE_PATH = 'radars.json';
   const RADARS = ['ka1', 'ka2'];
+  const KM_PER_DEG_LAT = 111.32;
 
   const $ = id => document.getElementById(id);
   const configured = CONFIG.owner && CONFIG.owner !== 'YOUR-GITHUB-USERNAME';
@@ -229,7 +255,6 @@
     try { if (window.storage) window.storage.delete(TOKEN_KEY); } catch (e) {}
   }
   async function loadStoredTokenFallback() {
-    // for environments without localStorage (e.g. claude.ai preview)
     try {
       if (!localStorage.getItem(TOKEN_KEY) && window.storage) {
         const r = await window.storage.get(TOKEN_KEY);
@@ -238,8 +263,8 @@
     } catch (e) {}
   }
 
-  function rawUrl() {
-    return 'https://raw.githubusercontent.com/' + CONFIG.owner + '/' + CONFIG.repo + '/' + CONFIG.branch + '/' + PLACEFILE_PATH;
+  function rawUrl(path) {
+    return 'https://raw.githubusercontent.com/' + CONFIG.owner + '/' + CONFIG.repo + '/' + CONFIG.branch + '/' + path;
   }
 
   function setStatus(text, cls) {
@@ -252,7 +277,7 @@
     m.className = 'msg' + (cls ? ' ' + cls : '');
   }
 
-  // ---------- coordinate parsing ----------
+  // ---------- parsing ----------
   function parseCoords(str) {
     if (!str || !str.trim()) return { empty: true };
     let cleaned = str.trim().replace(/[()]/g, '');
@@ -267,34 +292,137 @@
     return { lat, lon };
   }
 
-  function showParsed(id) {
-    const input = $(id + '-coords');
-    const out = $(id + '-parsed');
-    const p = parseCoords(input.value);
-    input.classList.remove('bad');
-    if (p.empty) { out.textContent = 'not deployed — will be left off the placefile'; out.className = 'parsed empty'; return p; }
-    if (p.error) { out.textContent = 'can\u2019t read that — use decimal degrees like 33.5646, -101.8552'; out.className = 'parsed err'; input.classList.add('bad'); return p; }
-    out.textContent = '\u2713 ' + p.lat.toFixed(5) + ', ' + p.lon.toFixed(5);
-    out.className = 'parsed ok';
-    return p;
+  function parseRange(str) {
+    if (!str || !str.trim()) return { empty: true };
+    const v = parseFloat(str);
+    if (isNaN(v) || v <= 0 || v > 500) return { error: true };
+    return { km: v };
   }
 
-  // ---------- placefile ----------
+  // returns {empty} | {error} | {lat, lon, range}  (range may be 0 if blank)
+  function readRadar(id) {
+    const p = parseCoords($(id + '-coords').value);
+    const r = parseRange($(id + '-range').value);
+    if (p.empty) return { empty: true };
+    if (p.error) return { error: 'coords' };
+    if (r.error) return { error: 'range' };
+    return { lat: p.lat, lon: p.lon, range: r.empty ? 0 : r.km };
+  }
+
+  function showParsed(id) {
+    const input = $(id + '-coords');
+    const rinput = $(id + '-range');
+    const out = $(id + '-parsed');
+    const r = readRadar(id);
+    input.classList.remove('bad');
+    rinput.classList.remove('bad');
+    if (r.empty) { out.textContent = 'not deployed — will be left off the placefiles'; out.className = 'parsed empty'; return r; }
+    if (r.error === 'coords') { out.textContent = 'can\u2019t read the coordinates — use decimal degrees like 33.5646, -101.8552'; out.className = 'parsed err'; input.classList.add('bad'); return r; }
+    if (r.error === 'range') { out.textContent = 'can\u2019t read the range — enter km as a number, or leave blank for no circle'; out.className = 'parsed err'; rinput.classList.add('bad'); return r; }
+    const ring = r.range > 0 ? ' \u00b7 ' + r.range + ' km circle' : ' \u00b7 no range circle';
+    out.textContent = '\u2713 ' + r.lat.toFixed(5) + ', ' + r.lon.toFixed(5) + ring;
+    out.className = 'parsed ok';
+    return r;
+  }
+
+  // ---------- geometry ----------
+  // local flat-earth projection (km east/north) around a reference latitude
+  function toXY(lat, lon, lat0, lon0) {
+    return {
+      x: (lon - lon0) * KM_PER_DEG_LAT * Math.cos(lat0 * Math.PI / 180),
+      y: (lat - lat0) * KM_PER_DEG_LAT
+    };
+  }
+  function toLatLon(x, y, lat0, lon0) {
+    return {
+      lat: lat0 + y / KM_PER_DEG_LAT,
+      lon: lon0 + x / (KM_PER_DEG_LAT * Math.cos(lat0 * Math.PI / 180))
+    };
+  }
+
   function circlePoints(lat0, lon0, radiusKm, n = 72) {
     const pts = [];
     const latRad = lat0 * Math.PI / 180;
     for (let i = 0; i <= n; i++) {
       const t = (i / n) * 2 * Math.PI;
       pts.push([
-        lat0 + (radiusKm / 111.32) * Math.cos(t),
-        lon0 + (radiusKm / (111.32 * Math.cos(latRad))) * Math.sin(t)
+        lat0 + (radiusKm / KM_PER_DEG_LAT) * Math.cos(t),
+        lon0 + (radiusKm / (KM_PER_DEG_LAT * Math.cos(latRad))) * Math.sin(t)
       ]);
     }
     return pts;
   }
 
-  function buildPlacefile() {
-    const stamp = new Date().toISOString().replace('T', ' ').slice(0, 16) + ' UTC';
+  // arc of a circle (center cx,cy radius r in local km) from angle a1 to a2 (going CCW), returned as lat/lon points
+  function arcPoints(cx, cy, r, a1, a2, lat0, lon0, n = 48) {
+    while (a2 < a1) a2 += 2 * Math.PI;
+    const pts = [];
+    for (let i = 0; i <= n; i++) {
+      const t = a1 + (i / n) * (a2 - a1);
+      const p = toLatLon(cx + r * Math.cos(t), cy + r * Math.sin(t), lat0, lon0);
+      pts.push([p.lat, p.lon]);
+    }
+    return pts;
+  }
+
+  // overlap analysis of the two range circles.
+  // returns { none:true } | { contained: 'ka1'|'ka2' } | { arcs: [pts, pts], sepKm }
+  function analyzeOverlap(r1, r2) {
+    const lat0 = (r1.lat + r2.lat) / 2, lon0 = (r1.lon + r2.lon) / 2;
+    const p1 = toXY(r1.lat, r1.lon, lat0, lon0);
+    const p2 = toXY(r2.lat, r2.lon, lat0, lon0);
+    const dx = p2.x - p1.x, dy = p2.y - p1.y;
+    const d = Math.sqrt(dx * dx + dy * dy);
+    const R1 = r1.range, R2 = r2.range;
+    if (d >= R1 + R2) return { none: true, sepKm: d };
+    if (d <= Math.abs(R1 - R2)) return { contained: R1 < R2 ? 'ka1' : 'ka2', sepKm: d };
+    // lens: two intersection points
+    const a = (d * d + R1 * R1 - R2 * R2) / (2 * d);
+    const alpha1 = Math.acos(Math.min(1, Math.max(-1, a / R1)));
+    const a2len = d - a;
+    const alpha2 = Math.acos(Math.min(1, Math.max(-1, a2len / R2)));
+    const theta = Math.atan2(dy, dx);           // direction KA1 -> KA2
+    // arc of circle 1 that lies inside circle 2: centered on theta, half-width alpha1
+    const arc1 = arcPoints(p1.x, p1.y, R1, theta - alpha1, theta + alpha1, lat0, lon0);
+    // arc of circle 2 that lies inside circle 1: centered on theta+PI, half-width alpha2
+    const arc2 = arcPoints(p2.x, p2.y, R2, theta + Math.PI - alpha2, theta + Math.PI + alpha2, lat0, lon0);
+    return { arcs: [arc1, arc2], sepKm: d };
+  }
+
+  function showOverlapNote() {
+    const note = $('overlap-note');
+    const r1 = readRadar('ka1'), r2 = readRadar('ka2');
+    note.className = 'overlap-note';
+    if (r1.empty || r2.empty || r1.error || r2.error || !(r1.range > 0) || !(r2.range > 0)) {
+      note.textContent = '';
+      return;
+    }
+    const ov = analyzeOverlap(r1, r2);
+    const sep = ov.sepKm.toFixed(1);
+    if (ov.none) {
+      note.textContent = 'trucks ' + sep + ' km apart — range circles do not overlap';
+    } else if (ov.contained) {
+      note.textContent = 'trucks ' + sep + ' km apart — ' + ov.contained.toUpperCase() + '\u2019s circle is entirely inside the other';
+      note.className = 'overlap-note ok';
+    } else {
+      note.textContent = 'trucks ' + sep + ' km apart — overlap region will be drawn';
+      note.className = 'overlap-note ok';
+    }
+  }
+
+  // ---------- placefile builders ----------
+  function stampNow() {
+    return new Date().toISOString().replace('T', ' ').slice(0, 16) + ' UTC';
+  }
+
+  function pushLine(L, width, hover, pts) {
+    L.push('Line: ' + width + ', 0, "' + hover + '"');
+    pts.forEach(pt => L.push('  ' + pt[0].toFixed(5) + ', ' + pt[1].toFixed(5)));
+    L.push('End:');
+  }
+
+  function buildPositions() {
+    const stamp = stampNow();
     const L = [];
     L.push('; Ka radar positions — updated ' + stamp);
     L.push('Title: Ka-band Radars');
@@ -303,28 +431,71 @@
     L.push('Color: 233 8 2');
     L.push('Font: 1, 12, 1, "Arial"');
     L.push('');
-
     RADARS.forEach(id => {
-      const p = parseCoords($(id + '-coords').value);
-      if (p.empty || p.error) return;
+      const r = readRadar(id);
+      if (r.empty || r.error) return;
       const name = id.toUpperCase();
-      const lat = p.lat.toFixed(5), lon = p.lon.toFixed(5);
       L.push('; --- ' + name + ' ---');
-      L.push('Text: ' + lat + ', ' + lon + ', 1, "' + name + '", "' + name + ' — updated ' + stamp + '"');
-      if (CONFIG.ringKm > 0) {
-        L.push('Line: 2, 0, "' + name + ' ' + CONFIG.ringKm + ' km range"');
-        circlePoints(p.lat, p.lon, CONFIG.ringKm).forEach(pt => {
-          L.push('  ' + pt[0].toFixed(5) + ', ' + pt[1].toFixed(5));
-        });
-        L.push('End:');
-      }
+      L.push('Text: ' + r.lat.toFixed(5) + ', ' + r.lon.toFixed(5) + ', 1, "' + name + '", "' + name + ' — updated ' + stamp + '"');
       L.push('');
     });
+    return L.join('\n');
+  }
+
+  function buildCoverage() {
+    const stamp = stampNow();
+    const L = [];
+    L.push('; Ka radar coverage — range circles + overlap — updated ' + stamp);
+    L.push('Title: Ka Coverage');
+    L.push('Refresh: ' + Math.max(1, CONFIG.refresh));
+    L.push('Threshold: 999');
+    L.push('');
+
+    const active = {};
+    RADARS.forEach(id => {
+      const r = readRadar(id);
+      if (!r.empty && !r.error) active[id] = r;
+    });
+
+    // individual range circles, red
+    L.push('Color: 233 8 2');
+    RADARS.forEach(id => {
+      const r = active[id];
+      if (!r || !(r.range > 0)) return;
+      const name = id.toUpperCase();
+      L.push('; --- ' + name + ' range circle ---');
+      pushLine(L, 2, name + ' ' + r.range + ' km range', circlePoints(r.lat, r.lon, r.range));
+      L.push('');
+    });
+
+    // overlap lens, white, thicker
+    if (active.ka1 && active.ka2 && active.ka1.range > 0 && active.ka2.range > 0) {
+      const ov = analyzeOverlap(active.ka1, active.ka2);
+      L.push('Color: 255 255 255');
+      if (ov.none) {
+        L.push('; range circles do not overlap (trucks ' + ov.sepKm.toFixed(1) + ' km apart)');
+      } else if (ov.contained) {
+        const inner = active[ov.contained];
+        L.push('; ' + ov.contained.toUpperCase() + '\u2019s circle lies entirely inside the other — overlap = that full circle');
+        pushLine(L, 3, 'Dual coverage — overlap region', circlePoints(inner.lat, inner.lon, inner.range));
+      } else {
+        L.push('; --- overlap region (both radars in range) ---');
+        pushLine(L, 3, 'Dual coverage — overlap region', ov.arcs[0]);
+        pushLine(L, 3, 'Dual coverage — overlap region', ov.arcs[1]);
+      }
+      L.push('');
+    }
 
     return L.join('\n');
   }
 
-  function refreshPreview() { $('preview').textContent = buildPlacefile(); }
+  function refreshPreview() {
+    $('preview').textContent =
+      '================ radars.txt ================\n' +
+      buildPositions() +
+      '\n\n=============== coverage.txt ===============\n' +
+      buildCoverage();
+  }
 
   // ---------- GitHub API ----------
   function ghHeaders(token) {
@@ -384,10 +555,12 @@
         const r = state[id];
         if (r && r.coords !== undefined) {
           $(id + '-coords').value = r.coords;
+          if (r.range !== undefined) $(id + '-range').value = r.range;
           $(id + '-last').textContent = r.updated ? 'last published ' + r.updated : '';
         }
         showParsed(id);
       });
+      showOverlapNote();
       setStatus('showing current published positions', 'ok');
       refreshPreview();
     } catch (e) {
@@ -398,15 +571,13 @@
 
   async function publish() {
     if (!configured) {
-      setMsg('Set the owner in the CONFIG block at the top of index.html first.', 'err');
+      setMsg('Set the owner in the CONFIG block at the top of GRKAlocs.html first.', 'err');
       return;
     }
     for (const id of RADARS) {
-      const p = showParsed(id);
-      if (p.error) {
-        setMsg(id.toUpperCase() + ' coordinates don\u2019t parse — fix or clear the box.', 'err');
-        return;
-      }
+      const r = showParsed(id);
+      if (r.error === 'coords') { setMsg(id.toUpperCase() + ' coordinates don\u2019t parse — fix or clear the box.', 'err'); return; }
+      if (r.error === 'range') { setMsg(id.toUpperCase() + ' range doesn\u2019t parse — enter km or leave blank.', 'err'); return; }
     }
     const token = getToken();
     if (!token) {
@@ -419,12 +590,17 @@
     btn.disabled = true;
     try {
       setMsg('Publishing…', 'plain');
-      const stamp = new Date().toISOString().replace('T', ' ').slice(0, 16) + ' UTC';
+      const stamp = stampNow();
       const state = { updated: stamp };
       RADARS.forEach(id => {
-        state[id] = { coords: $(id + '-coords').value.trim(), updated: stamp };
+        state[id] = {
+          coords: $(id + '-coords').value.trim(),
+          range: $(id + '-range').value.trim(),
+          updated: stamp
+        };
       });
-      await ghPutFile(PLACEFILE_PATH, buildPlacefile(), 'Update Ka radar positions — ' + stamp, token);
+      await ghPutFile(PLACEFILE_PATH, buildPositions(), 'Update Ka radar positions — ' + stamp, token);
+      await ghPutFile(COVERAGE_PATH, buildCoverage(), 'Update Ka coverage — ' + stamp, token);
       await ghPutFile(STATE_PATH, JSON.stringify(state, null, 2), 'Update state — ' + stamp, token);
       saveToken(token);
       $('token-row').style.display = 'none';
@@ -441,8 +617,10 @@
 
   // ---------- events ----------
   RADARS.forEach(id => {
-    $(id + '-coords').addEventListener('input', () => { showParsed(id); refreshPreview(); });
-    $(id + '-coords').addEventListener('keydown', e => { if (e.key === 'Enter') publish(); });
+    [id + '-coords', id + '-range'].forEach(fid => {
+      $(fid).addEventListener('input', () => { showParsed(id); showOverlapNote(); refreshPreview(); });
+      $(fid).addEventListener('keydown', e => { if (e.key === 'Enter') publish(); });
+    });
   });
 
   $('btn-publish').addEventListener('click', publish);
@@ -460,21 +638,26 @@
     setTimeout(() => { btn.textContent = old; }, 1200);
   }
 
-  $('btn-copy-url').addEventListener('click', e => copyText(rawUrl(), e.target));
-  $('btn-copy-pf').addEventListener('click', e => copyText(buildPlacefile(), e.target));
-  $('btn-download').addEventListener('click', () => {
-    const blob = new Blob([buildPlacefile()], { type: 'text/plain' });
+  function download(name, text) {
+    const blob = new Blob([text], { type: 'text/plain' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = 'radars.txt';
+    a.download = name;
     a.click();
     URL.revokeObjectURL(a.href);
-  });
+  }
+
+  $('btn-copy-url').addEventListener('click', e => copyText(rawUrl(PLACEFILE_PATH), e.target));
+  $('btn-copy-url-cov').addEventListener('click', e => copyText(rawUrl(COVERAGE_PATH), e.target));
+  $('btn-download').addEventListener('click', () => download('radars.txt', buildPositions()));
+  $('btn-download-cov').addEventListener('click', () => download('coverage.txt', buildCoverage()));
 
   // ---------- init ----------
-  $('gr-url').value = configured ? rawUrl() : '(configure first)';
+  $('gr-url').value = configured ? rawUrl(PLACEFILE_PATH) : '(configure first)';
+  $('gr-url-cov').value = configured ? rawUrl(COVERAGE_PATH) : '(configure first)';
   loadStoredTokenFallback().then(() => {
     RADARS.forEach(showParsed);
+    showOverlapNote();
     refreshPreview();
     loadShared();
   });
