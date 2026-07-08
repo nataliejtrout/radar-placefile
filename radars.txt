@@ -1,12 +1,32 @@
-; Ka radar positions — updated 2026-07-08 19:44 UTC
+; Ka radar positions — updated 2026-07-08 19:45 UTC
 Title: Ka-band Radars
 Refresh: 2
 Threshold: 999
-Color: 233 8 2
+Color: 255 255 255
 Font: 1, 12, 1, "Arial"
 
 ; --- KA1 ---
-Text: 41.19251, -103.66314, 1, "KA1", "KA1 — updated 2026-07-08 19:44 UTC"
+Object: 41.19251, -103.66314
+Triangles:
+  0, -5
+  5, 0
+  0, 5
+  0, -5
+  0, 5
+  -5, 0
+End:
+Text: 7, -7, 1, "KA1", "KA1 — updated 2026-07-08 19:45 UTC"
+End:
 
 ; --- KA2 ---
-Text: 41.23084, -103.75985, 1, "KA2", "KA2 — updated 2026-07-08 19:44 UTC"
+Object: 41.23084, -103.75985
+Triangles:
+  0, -5
+  5, 0
+  0, 5
+  0, -5
+  0, 5
+  -5, 0
+End:
+Text: 7, -7, 1, "KA2", "KA2 — updated 2026-07-08 19:45 UTC"
+End:
