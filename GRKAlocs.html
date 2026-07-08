@@ -215,7 +215,7 @@
   //  file to your repo. Nothing else in the file needs changing.
   // ============================================================
   const CONFIG = {
-    owner:   "nataliejtrout",   // <-- your GitHub username
+    owner:   "YOUR-GITHUB-USERNAME",   // <-- your GitHub username
     repo:    "radar-placefile",        // <-- this repo's name
     branch:  "main",
     refresh: 2,      // how often GR re-polls the placefiles, minutes
@@ -369,7 +369,7 @@
     L.push('Title: Ka-band Radars');
     L.push('Refresh: ' + Math.max(1, CONFIG.refresh));
     L.push('Threshold: 999');
-    L.push('Color: 233 8 2');
+    L.push('Color: 255 255 255');
     L.push('Font: 1, 12, 1, "Arial"');
     L.push('');
     RADARS.forEach(id => {
@@ -377,7 +377,19 @@
       if (p.empty || p.error) return;
       const name = id.toUpperCase();
       L.push('; --- ' + name + ' ---');
-      L.push('Text: ' + p.lat.toFixed(5) + ', ' + p.lon.toFixed(5) + ', 1, "' + name + '", "' + name + ' — updated ' + stamp + '"');
+      L.push('Object: ' + p.lat.toFixed(5) + ', ' + p.lon.toFixed(5));
+      // small filled diamond centered on the exact location (pixel offsets)
+      L.push('Triangles:');
+      L.push('  0, -5');
+      L.push('  5, 0');
+      L.push('  0, 5');
+      L.push('  0, -5');
+      L.push('  0, 5');
+      L.push('  -5, 0');
+      L.push('End:');
+      // label offset up-right of the dot
+      L.push('Text: 7, -7, 1, "' + name + '", "' + name + ' — updated ' + stamp + '"');
+      L.push('End:');
       L.push('');
     });
     return L.join('\n');
@@ -391,7 +403,7 @@
     L.push('Title: Ka Dual-Doppler Lobes');
     L.push('Refresh: ' + Math.max(1, CONFIG.refresh));
     L.push('Threshold: 999');
-    L.push('Color: 255 255 0');
+    L.push('Color: 255 255 255');
     L.push('');
 
     const p1c = parseCoords($('ka1-coords').value);
