@@ -73,17 +73,17 @@
   input:focus, button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
   input.bad { border-color: var(--danger); }
 
-  .field-row { display: flex; gap: 12px; }
-  .field-row .coords-field { flex: 1; min-width: 0; }
-  .field-row .range-field { max-width: 130px; }
-
   .parsed { font-family: 'IBM Plex Mono', monospace; font-size: 12px; margin-top: 5px; min-height: 18px; }
   .parsed.ok { color: var(--green); }
   .parsed.err { color: var(--danger); }
   .parsed.empty { color: var(--muted); }
 
-  .overlap-note { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--muted); text-align: center; margin-top: 4px; min-height: 18px; }
-  .overlap-note.ok { color: var(--green); }
+  .baseline-note { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--muted); text-align: center; margin-top: 4px; min-height: 18px; }
+  .baseline-note.ok { color: var(--green); }
+
+  .angle-row { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 2px; }
+  .angle-row label { margin: 0; }
+  .angle-row input { max-width: 90px; padding: 8px 10px; font-size: 14px; text-align: center; }
 
   .token-row {
     background: var(--panel); border: 1px solid var(--accent); border-radius: 10px;
@@ -145,15 +145,9 @@
       <h2>KA1</h2>
       <span class="last" id="ka1-last"></span>
     </div>
-    <div class="field-row">
-      <div class="coords-field">
-        <label for="ka1-coords">Lat, Lon — leave blank if not deployed</label>
-        <input type="text" id="ka1-coords" placeholder="33.5646, -101.8552" autocomplete="off">
-      </div>
-      <div class="range-field">
-        <label for="ka1-range">Range (km)</label>
-        <input type="text" id="ka1-range" placeholder="15" autocomplete="off">
-      </div>
+    <div>
+      <label for="ka1-coords">Lat, Lon — leave blank if not deployed</label>
+      <input type="text" id="ka1-coords" placeholder="33.5646, -101.8552" autocomplete="off">
     </div>
     <div class="parsed" id="ka1-parsed"></div>
   </div>
@@ -163,20 +157,19 @@
       <h2>KA2</h2>
       <span class="last" id="ka2-last"></span>
     </div>
-    <div class="field-row">
-      <div class="coords-field">
-        <label for="ka2-coords">Lat, Lon — leave blank if not deployed</label>
-        <input type="text" id="ka2-coords" placeholder="33.5646, -101.8552" autocomplete="off">
-      </div>
-      <div class="range-field">
-        <label for="ka2-range">Range (km)</label>
-        <input type="text" id="ka2-range" placeholder="15" autocomplete="off">
-      </div>
+    <div>
+      <label for="ka2-coords">Lat, Lon — leave blank if not deployed</label>
+      <input type="text" id="ka2-coords" placeholder="33.5646, -101.8552" autocomplete="off">
     </div>
     <div class="parsed" id="ka2-parsed"></div>
   </div>
 
-  <div class="overlap-note" id="overlap-note"></div>
+  <div class="angle-row">
+    <label for="lobe-angle">Lobe crossing angle (°)</label>
+    <input type="text" id="lobe-angle" value="30" autocomplete="off">
+  </div>
+
+  <div class="baseline-note" id="baseline-note"></div>
 
   <div class="token-row" id="token-row">
     <label for="gh-token">First publish from this browser — paste the team access token (saved here after this, ask Natalie for it)</label>
@@ -195,9 +188,9 @@
       <input type="text" id="gr-url" readonly aria-label="Positions placefile URL for GR2Analyst">
       <button class="small" id="btn-copy-url">Copy</button>
     </div>
-    <label>Coverage placefile — range circles + overlap, toggle on/off in GR (add once, same way)</label>
+    <label>Dual-Doppler lobes placefile — toggle on/off in GR (add once, same way)</label>
     <div class="url-box">
-      <input type="text" id="gr-url-cov" readonly aria-label="Coverage placefile URL for GR2Analyst">
+      <input type="text" id="gr-url-cov" readonly aria-label="Lobes placefile URL for GR2Analyst">
       <button class="small" id="btn-copy-url-cov">Copy</button>
     </div>
     <details>
@@ -222,10 +215,11 @@
   //  file to your repo. Nothing else in the file needs changing.
   // ============================================================
   const CONFIG = {
-    owner:   "nataliejtrout",   // <-- your GitHub username
+    owner:   "YOUR-GITHUB-USERNAME",   // <-- your GitHub username
     repo:    "radar-placefile",        // <-- this repo's name
     branch:  "main",
-    refresh: 2     // how often GR re-polls the placefiles, minutes
+    refresh: 2,      // how often GR re-polls the placefiles, minutes
+    lobeAngle: 30    // dual-Doppler lobe crossing-angle limit, degrees (30 is standard)
   };
   // ============================================================
 
@@ -292,41 +286,19 @@
     return { lat, lon };
   }
 
-  function parseRange(str) {
-    if (!str || !str.trim()) return { empty: true };
-    const v = parseFloat(str);
-    if (isNaN(v) || v <= 0 || v > 500) return { error: true };
-    return { km: v };
-  }
-
-  // returns {empty} | {error} | {lat, lon, range}  (range may be 0 if blank)
-  function readRadar(id) {
-    const p = parseCoords($(id + '-coords').value);
-    const r = parseRange($(id + '-range').value);
-    if (p.empty) return { empty: true };
-    if (p.error) return { error: 'coords' };
-    if (r.error) return { error: 'range' };
-    return { lat: p.lat, lon: p.lon, range: r.empty ? 0 : r.km };
-  }
-
   function showParsed(id) {
     const input = $(id + '-coords');
-    const rinput = $(id + '-range');
     const out = $(id + '-parsed');
-    const r = readRadar(id);
+    const p = parseCoords(input.value);
     input.classList.remove('bad');
-    rinput.classList.remove('bad');
-    if (r.empty) { out.textContent = 'not deployed — will be left off the placefiles'; out.className = 'parsed empty'; return r; }
-    if (r.error === 'coords') { out.textContent = 'can\u2019t read the coordinates — use decimal degrees like 33.5646, -101.8552'; out.className = 'parsed err'; input.classList.add('bad'); return r; }
-    if (r.error === 'range') { out.textContent = 'can\u2019t read the range — enter km as a number, or leave blank for no circle'; out.className = 'parsed err'; rinput.classList.add('bad'); return r; }
-    const ring = r.range > 0 ? ' \u00b7 ' + r.range + ' km circle' : ' \u00b7 no range circle';
-    out.textContent = '\u2713 ' + r.lat.toFixed(5) + ', ' + r.lon.toFixed(5) + ring;
+    if (p.empty) { out.textContent = 'not deployed — will be left off the placefiles'; out.className = 'parsed empty'; return p; }
+    if (p.error) { out.textContent = 'can\u2019t read that — use decimal degrees like 33.5646, -101.8552'; out.className = 'parsed err'; input.classList.add('bad'); return p; }
+    out.textContent = '\u2713 ' + p.lat.toFixed(5) + ', ' + p.lon.toFixed(5);
     out.className = 'parsed ok';
-    return r;
+    return p;
   }
 
   // ---------- geometry ----------
-  // local flat-earth projection (km east/north) around a reference latitude
   function toXY(lat, lon, lat0, lon0) {
     return {
       x: (lon - lon0) * KM_PER_DEG_LAT * Math.cos(lat0 * Math.PI / 180),
@@ -340,21 +312,7 @@
     };
   }
 
-  function circlePoints(lat0, lon0, radiusKm, n = 72) {
-    const pts = [];
-    const latRad = lat0 * Math.PI / 180;
-    for (let i = 0; i <= n; i++) {
-      const t = (i / n) * 2 * Math.PI;
-      pts.push([
-        lat0 + (radiusKm / KM_PER_DEG_LAT) * Math.cos(t),
-        lon0 + (radiusKm / (KM_PER_DEG_LAT * Math.cos(latRad))) * Math.sin(t)
-      ]);
-    }
-    return pts;
-  }
-
-  // arc of a circle (center cx,cy radius r in local km) from angle a1 to a2 (going CCW), returned as lat/lon points
-  function arcPoints(cx, cy, r, a1, a2, lat0, lon0, n = 48) {
+  function arcPoints(cx, cy, r, a1, a2, lat0, lon0, n = 96) {
     while (a2 < a1) a2 += 2 * Math.PI;
     const pts = [];
     for (let i = 0; i <= n; i++) {
@@ -365,49 +323,32 @@
     return pts;
   }
 
-  // overlap analysis of the two range circles.
-  // returns { none:true } | { contained: 'ka1'|'ka2' } | { arcs: [pts, pts], sepKm }
-  function analyzeOverlap(r1, r2) {
-    const lat0 = (r1.lat + r2.lat) / 2, lon0 = (r1.lon + r2.lon) / 2;
-    const p1 = toXY(r1.lat, r1.lon, lat0, lon0);
-    const p2 = toXY(r2.lat, r2.lon, lat0, lon0);
-    const dx = p2.x - p1.x, dy = p2.y - p1.y;
-    const d = Math.sqrt(dx * dx + dy * dy);
-    const R1 = r1.range, R2 = r2.range;
-    if (d >= R1 + R2) return { none: true, sepKm: d };
-    if (d <= Math.abs(R1 - R2)) return { contained: R1 < R2 ? 'ka1' : 'ka2', sepKm: d };
-    // lens: two intersection points
-    const a = (d * d + R1 * R1 - R2 * R2) / (2 * d);
-    const alpha1 = Math.acos(Math.min(1, Math.max(-1, a / R1)));
-    const a2len = d - a;
-    const alpha2 = Math.acos(Math.min(1, Math.max(-1, a2len / R2)));
-    const theta = Math.atan2(dy, dx);           // direction KA1 -> KA2
-    // arc of circle 1 that lies inside circle 2: centered on theta, half-width alpha1
-    const arc1 = arcPoints(p1.x, p1.y, R1, theta - alpha1, theta + alpha1, lat0, lon0);
-    // arc of circle 2 that lies inside circle 1: centered on theta+PI, half-width alpha2
-    const arc2 = arcPoints(p2.x, p2.y, R2, theta + Math.PI - alpha2, theta + Math.PI + alpha2, lat0, lon0);
-    return { arcs: [arc1, arc2], sepKm: d };
+  // both radars deployed -> baseline distance in km, or null
+  function baselineKm() {
+    const p1 = parseCoords($('ka1-coords').value);
+    const p2 = parseCoords($('ka2-coords').value);
+    if (p1.empty || p1.error || p2.empty || p2.error) return null;
+    const lat0 = (p1.lat + p2.lat) / 2, lon0 = (p1.lon + p2.lon) / 2;
+    const a = toXY(p1.lat, p1.lon, lat0, lon0);
+    const b = toXY(p2.lat, p2.lon, lat0, lon0);
+    return Math.sqrt((b.x - a.x) ** 2 + (b.y - a.y) ** 2);
   }
 
-  function showOverlapNote() {
-    const note = $('overlap-note');
-    const r1 = readRadar('ka1'), r2 = readRadar('ka2');
-    note.className = 'overlap-note';
-    if (r1.empty || r2.empty || r1.error || r2.error || !(r1.range > 0) || !(r2.range > 0)) {
-      note.textContent = '';
-      return;
-    }
-    const ov = analyzeOverlap(r1, r2);
-    const sep = ov.sepKm.toFixed(1);
-    if (ov.none) {
-      note.textContent = 'trucks ' + sep + ' km apart — range circles do not overlap';
-    } else if (ov.contained) {
-      note.textContent = 'trucks ' + sep + ' km apart — ' + ov.contained.toUpperCase() + '\u2019s circle is entirely inside the other';
-      note.className = 'overlap-note ok';
-    } else {
-      note.textContent = 'trucks ' + sep + ' km apart — overlap region will be drawn';
-      note.className = 'overlap-note ok';
-    }
+  function showBaselineNote() {
+    const note = $('baseline-note');
+    const D = baselineKm();
+    note.className = 'baseline-note';
+    if (D === null) { note.textContent = ''; return; }
+    if (D < 0.05) { note.textContent = 'trucks are at the same point — no lobes can be drawn'; return; }
+    note.textContent = 'baseline ' + D.toFixed(1) + ' km — dual-Doppler lobes will be drawn';
+    note.className = 'baseline-note ok';
+  }
+
+  // lobe angle from the page input; falls back to CONFIG default if unreadable
+  function lobeAngle() {
+    const v = parseFloat($('lobe-angle').value);
+    if (isNaN(v) || v < 5 || v > 85) return null;
+    return v;
   }
 
   // ---------- placefile builders ----------
@@ -432,11 +373,11 @@
     L.push('Font: 1, 12, 1, "Arial"');
     L.push('');
     RADARS.forEach(id => {
-      const r = readRadar(id);
-      if (r.empty || r.error) return;
+      const p = parseCoords($(id + '-coords').value);
+      if (p.empty || p.error) return;
       const name = id.toUpperCase();
       L.push('; --- ' + name + ' ---');
-      L.push('Text: ' + r.lat.toFixed(5) + ', ' + r.lon.toFixed(5) + ', 1, "' + name + '", "' + name + ' — updated ' + stamp + '"');
+      L.push('Text: ' + p.lat.toFixed(5) + ', ' + p.lon.toFixed(5) + ', 1, "' + name + '", "' + name + ' — updated ' + stamp + '"');
       L.push('');
     });
     return L.join('\n');
@@ -444,48 +385,44 @@
 
   function buildCoverage() {
     const stamp = stampNow();
+    const angle = lobeAngle() || CONFIG.lobeAngle || 30;
     const L = [];
-    L.push('; Ka radar coverage — range circles + overlap — updated ' + stamp);
-    L.push('Title: Ka Coverage');
+    L.push('; Ka dual-Doppler lobes (' + angle + '\u00b0 crossing angle) — updated ' + stamp);
+    L.push('Title: Ka Dual-Doppler Lobes');
     L.push('Refresh: ' + Math.max(1, CONFIG.refresh));
     L.push('Threshold: 999');
+    L.push('Color: 255 255 0');
     L.push('');
 
-    const active = {};
-    RADARS.forEach(id => {
-      const r = readRadar(id);
-      if (!r.empty && !r.error) active[id] = r;
-    });
-
-    // individual range circles, red
-    L.push('Color: 233 8 2');
-    RADARS.forEach(id => {
-      const r = active[id];
-      if (!r || !(r.range > 0)) return;
-      const name = id.toUpperCase();
-      L.push('; --- ' + name + ' range circle ---');
-      pushLine(L, 2, name + ' ' + r.range + ' km range', circlePoints(r.lat, r.lon, r.range));
-      L.push('');
-    });
-
-    // overlap lens, white, thicker
-    if (active.ka1 && active.ka2 && active.ka1.range > 0 && active.ka2.range > 0) {
-      const ov = analyzeOverlap(active.ka1, active.ka2);
-      L.push('Color: 255 255 255');
-      if (ov.none) {
-        L.push('; range circles do not overlap (trucks ' + ov.sepKm.toFixed(1) + ' km apart)');
-      } else if (ov.contained) {
-        const inner = active[ov.contained];
-        L.push('; ' + ov.contained.toUpperCase() + '\u2019s circle lies entirely inside the other — overlap = that full circle');
-        pushLine(L, 3, 'Dual coverage — overlap region', circlePoints(inner.lat, inner.lon, inner.range));
-      } else {
-        L.push('; --- overlap region (both radars in range) ---');
-        pushLine(L, 3, 'Dual coverage — overlap region', ov.arcs[0]);
-        pushLine(L, 3, 'Dual coverage — overlap region', ov.arcs[1]);
-      }
-      L.push('');
+    const p1c = parseCoords($('ka1-coords').value);
+    const p2c = parseCoords($('ka2-coords').value);
+    if (p1c.empty || p1c.error || p2c.empty || p2c.error) {
+      L.push('; (need both radars deployed to draw lobes)');
+      return L.join('\n');
     }
 
+    const lat0 = (p1c.lat + p2c.lat) / 2, lon0 = (p1c.lon + p2c.lon) / 2;
+    const p1 = toXY(p1c.lat, p1c.lon, lat0, lon0);
+    const p2 = toXY(p2c.lat, p2c.lon, lat0, lon0);
+    const dx = p2.x - p1.x, dy = p2.y - p1.y;
+    const D = Math.sqrt(dx * dx + dy * dy);
+    if (D < 0.05) {
+      L.push('; (trucks are at the same point — no lobes)');
+      return L.join('\n');
+    }
+
+    const beta = angle * Math.PI / 180;
+    const R = D / (2 * Math.sin(beta));          // lobe circle radius
+    const off = D / (2 * Math.tan(beta));        // center offset from baseline midpoint
+    const mx = (p1.x + p2.x) / 2, my = (p1.y + p2.y) / 2;
+    const ux = -dy / D, uy = dx / D;             // unit perpendicular to baseline
+
+    L.push('; baseline KA1-KA2: ' + D.toFixed(1) + ' km — lobe circle radius: ' + R.toFixed(1) + ' km');
+    [1, -1].forEach(side => {
+      const cx = mx + side * off * ux, cy = my + side * off * uy;
+      pushLine(L, 2, 'Dual-Doppler lobe (' + angle + '\u00b0, baseline ' + D.toFixed(1) + ' km)', arcPoints(cx, cy, R, 0, 2 * Math.PI, lat0, lon0));
+    });
+    L.push('');
     return L.join('\n');
   }
 
@@ -551,16 +488,18 @@
         return;
       }
       const state = JSON.parse(b64decode(f.content));
+      if (state.lobeAngle !== undefined && String(state.lobeAngle).trim() !== '') {
+        $('lobe-angle').value = state.lobeAngle;
+      }
       RADARS.forEach(id => {
         const r = state[id];
         if (r && r.coords !== undefined) {
           $(id + '-coords').value = r.coords;
-          if (r.range !== undefined) $(id + '-range').value = r.range;
           $(id + '-last').textContent = r.updated ? 'last published ' + r.updated : '';
         }
         showParsed(id);
       });
-      showOverlapNote();
+      showBaselineNote();
       setStatus('showing current published positions', 'ok');
       refreshPreview();
     } catch (e) {
@@ -575,9 +514,14 @@
       return;
     }
     for (const id of RADARS) {
-      const r = showParsed(id);
-      if (r.error === 'coords') { setMsg(id.toUpperCase() + ' coordinates don\u2019t parse — fix or clear the box.', 'err'); return; }
-      if (r.error === 'range') { setMsg(id.toUpperCase() + ' range doesn\u2019t parse — enter km or leave blank.', 'err'); return; }
+      const p = showParsed(id);
+      if (p.error) { setMsg(id.toUpperCase() + ' coordinates don\u2019t parse — fix or clear the box.', 'err'); return; }
+    }
+    $('lobe-angle').classList.remove('bad');
+    if (lobeAngle() === null) {
+      $('lobe-angle').classList.add('bad');
+      setMsg('Lobe angle must be a number between 5 and 85 degrees.', 'err');
+      return;
     }
     const token = getToken();
     if (!token) {
@@ -591,16 +535,12 @@
     try {
       setMsg('Publishing…', 'plain');
       const stamp = stampNow();
-      const state = { updated: stamp };
+      const state = { updated: stamp, lobeAngle: $('lobe-angle').value.trim() };
       RADARS.forEach(id => {
-        state[id] = {
-          coords: $(id + '-coords').value.trim(),
-          range: $(id + '-range').value.trim(),
-          updated: stamp
-        };
+        state[id] = { coords: $(id + '-coords').value.trim(), updated: stamp };
       });
       await ghPutFile(PLACEFILE_PATH, buildPositions(), 'Update Ka radar positions — ' + stamp, token);
-      await ghPutFile(COVERAGE_PATH, buildCoverage(), 'Update Ka coverage — ' + stamp, token);
+      await ghPutFile(COVERAGE_PATH, buildCoverage(), 'Update Ka dual-Doppler lobes — ' + stamp, token);
       await ghPutFile(STATE_PATH, JSON.stringify(state, null, 2), 'Update state — ' + stamp, token);
       saveToken(token);
       $('token-row').style.display = 'none';
@@ -617,10 +557,13 @@
 
   // ---------- events ----------
   RADARS.forEach(id => {
-    [id + '-coords', id + '-range'].forEach(fid => {
-      $(fid).addEventListener('input', () => { showParsed(id); showOverlapNote(); refreshPreview(); });
-      $(fid).addEventListener('keydown', e => { if (e.key === 'Enter') publish(); });
-    });
+    $(id + '-coords').addEventListener('input', () => { showParsed(id); showBaselineNote(); refreshPreview(); });
+    $(id + '-coords').addEventListener('keydown', e => { if (e.key === 'Enter') publish(); });
+  });
+
+  $('lobe-angle').addEventListener('input', () => {
+    $('lobe-angle').classList.remove('bad');
+    refreshPreview();
   });
 
   $('btn-publish').addEventListener('click', publish);
@@ -657,7 +600,7 @@
   $('gr-url-cov').value = configured ? rawUrl(COVERAGE_PATH) : '(configure first)';
   loadStoredTokenFallback().then(() => {
     RADARS.forEach(showParsed);
-    showOverlapNote();
+    showBaselineNote();
     refreshPreview();
     loadShared();
   });
