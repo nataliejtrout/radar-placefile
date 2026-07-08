@@ -1,8 +1,8 @@
-; Ka dual-Doppler lobes (30° crossing angle) — updated 2026-07-08 19:44 UTC
+; Ka dual-Doppler lobes (30° crossing angle) — updated 2026-07-08 19:45 UTC
 Title: Ka Dual-Doppler Lobes
 Refresh: 2
 Threshold: 999
-Color: 255 255 0
+Color: 255 255 255
 
 ; baseline KA1-KA2: 9.2 km — lobe circle radius: 9.2 km
 Line: 2, 0, "Dual-Doppler lobe (30°, baseline 9.2 km)"
