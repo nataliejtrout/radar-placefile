@@ -1,4 +1,4 @@
-; Ka radar positions — updated 2026-07-08 19:45 UTC
+; Ka radar positions — updated 2026-07-08 19:47 UTC
 Title: Ka-band Radars
 Refresh: 2
 Threshold: 999
@@ -15,7 +15,7 @@ Triangles:
   0, 5
   -5, 0
 End:
-Text: 7, -7, 1, "KA1", "KA1 — updated 2026-07-08 19:45 UTC"
+Text: 7, -7, 1, "KA1", "KA1 — updated 2026-07-08 19:47 UTC"
 End:
 
 ; --- KA2 ---
@@ -28,5 +28,5 @@ Triangles:
   0, 5
   -5, 0
 End:
-Text: 7, -7, 1, "KA2", "KA2 — updated 2026-07-08 19:45 UTC"
+Text: 7, -7, 1, "KA2", "KA2 — updated 2026-07-08 19:47 UTC"
 End:
